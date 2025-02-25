@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  monerod:
+    image: monero-project/monero:latest
+    command: ["--rpc-bind-ip", "0.0.0.0", "--rpc-bind-port", "18081"]
+    ports:
+      - "18081:18081"
+    volumes:
+      - monero_data:/root/.bitmonero
+
+  wallet_rpc:
+    build: .
+    depends_on:
+      - monerod
+    environment:
+      - MASTER_WALLET_ADDRESS=your_master_wallet_address_here
+    ports:
+      - "28088:28088"
+
+volumes:
+  monero_data:
