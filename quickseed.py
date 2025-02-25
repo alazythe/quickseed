@@ -6,6 +6,11 @@ import schedule
 from datetime import datetime, timedelta
 from monero.wallet import Wallet
 from monero.backends.jsonrpc import JSONRPCWallet
+from flask import Flask, jsonify, request
+from flask_cors import CORS
+
+app = Flask(__name__)
+CORS(app)
 
 class MoneroWalletManager:
     def __init__(self, master_wallet_address):
@@ -36,7 +41,7 @@ class MoneroWalletManager:
             json.dump(data, f)
 
     def create_temporary_wallet(self):
-        wallet = Wallet(JSONRPCWallet(port=28088))
+        wallet = Wallet(JSONRPCWallet(port=18081, host='monerod'))
         address = wallet.address()
         
         with self.wallet_lock:
@@ -51,7 +56,6 @@ class MoneroWalletManager:
     def delete_wallet(self, address):
         with self.wallet_lock:
             if address in self.active_wallets:
-                self._transfer_funds_to_master(address)
                 self._transfer_funds_to_master(address)
                 del self.active_wallets[address]
                 self.save_wallet_data()
@@ -106,51 +110,46 @@ class MoneroWalletManager:
             schedule.run_pending()
             time.sleep(60)
 
-def main():
-    master_wallet = os.getenv('MASTER_WALLET_ADDRESS', '')
-    
-    if not master_wallet:
-        print("Please set the MASTER_WALLET_ADDRESS environment variable.")
-        return
+master_wallet = os.getenv('MASTER_WALLET_ADDRESS', '')
+if not master_wallet:
+    raise ValueError("Please set the MASTER_WALLET_ADDRESS environment variable.")
 
-    manager = MoneroWalletManager(master_wallet)
-    
-    while True:
-        print("\nMonero Temporary Wallet Manager")
-        print("1. Create new temporary wallet")
-        print("2. View active wallets")
-        print("3. Delete a wallet")
-        print("4. Exit")
-        
-        choice = input("Enter your choice (1-4): ")
-        
-        if choice == "1":
-            address = manager.create_temporary_wallet()
-            print(f"Created new temporary wallet: {address}")
-        
-        elif choice == "2":
-            active_wallets = manager.get_active_wallets()
-            if not active_wallets:
-                print("No active wallets")
-            else:
-                for wallet in active_wallets:
-                    print(f"\nAddress: {wallet['address']}")
-                    print(f"Time remaining: {wallet['minutes_remaining']} minutes")
-                    print(f"Balance: {wallet['balance']} XMR")
-        
-        elif choice == "3":
-            address = input("Enter wallet address to delete: ")
-            if manager.delete_wallet(address):
-                print("Wallet deleted successfully")
-            else:
-                print("Wallet not found")
-        
-        elif choice == "4":
-            print("Exiting...")
-            break
-        
-        else:
-            print("Invalid choice")
+wallet_manager = MoneroWalletManager(master_wallet)
+
+@app.route('/wallet', methods=['POST'])
+def create_wallet():
+    """Create a new temporary wallet"""
+    address = wallet_manager.create_temporary_wallet()
+    return jsonify({
+        'status': 'success',
+        'address': address
+    })
+
+@app.route('/wallet/<address>', methods=['DELETE'])
+def delete_wallet(address):
+    """Delete a specific wallet"""
+    success = wallet_manager.delete_wallet(address)
+    return jsonify({
+        'status': 'success' if success else 'error',
+        'message': 'Wallet deleted' if success else 'Wallet not found'
+    })
+
+@app.route('/wallets', methods=['GET'])
+def list_wallets():
+    """List all active wallets"""
+    wallets = wallet_manager.get_active_wallets()
+    return jsonify({
+        'status': 'success',
+        'wallets': wallets
+    })
+
+@app.route('/health', methods=['GET'])
+def health_check():
+    """Health check endpoint"""
+    return jsonify({
+        'status': 'healthy',
+        'timestamp': datetime.now().isoformat()
+    })
 
 if __name__ == "__main__":
-    main()
+    app.run(host='0.0.0.0', port=5000)

@@ -1,12 +1,13 @@
-FROM python:3.13-slim
+FROM python:3
 
 WORKDIR /app
 
-COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+COPY requirements.txt .
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org -r requirements.txt
 
-COPy . .
+COPY . .
 
-EXPOSE 28088 18081
+EXPOSE 5000 28088 18081
 
 CMD ["python", "quickseed.py"]

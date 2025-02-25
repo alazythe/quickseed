@@ -1,22 +1,28 @@
-version: '3.8'
-
 services:
   monerod:
-    image: monero-project/monero:latest
-    command: ["--rpc-bind-ip", "0.0.0.0", "--rpc-bind-port", "18081"]
+    image: sethsimmons/simple-monerod:latest
+    command: ["--rpc-bind-ip", "0.0.0.0", "--rpc-bind-port", "18081", "--non-interactive", "--confirm-external-bind"]
     ports:
       - "18081:18081"
     volumes:
       - monero_data:/root/.bitmonero
+    networks:
+      - quickseed_monero_net
 
   wallet_rpc:
-    build: .
+    build:
+      context: .
+      network: host
     depends_on:
       - monerod
     environment:
-      - MASTER_WALLET_ADDRESS=your_master_wallet_address_here
+      - MASTER_WALLET_ADDRESS=y48y8eVv4X1wQVZ6aUdH4HQbfGorCwhRtQaMGjoMNyoVKLdQb9zBAUdr9GNPKCWiC2dJYxSxRja9Vz5BuVucE2m79RM4aemU
     ports:
-      - "28088:28088"
+      - "5000:5000"
 
 volumes:
-  monero_data:
+  monero_data: {}
+
+networks:
+  quickseed_monero_net:
+    driver: bridge

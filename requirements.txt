@@ -1,3 +1,5 @@
 requests
 schedule
 monero
+flask
+flask-cors
