@@ -1,7 +1,7 @@
 services:
   monerod:
     image: sethsimmons/simple-monerod:latest
-    command: ["--rpc-bind-ip", "0.0.0.0", "--rpc-bind-port", "18081", "--non-interactive", "--confirm-external-bind"]
+    command: ["--rpc-bind-ip", "0.0.0.0", "--rpc-bind-port", "18081", "--confirm-external-bind"]
     ports:
       - "18081:18081"
     volumes:

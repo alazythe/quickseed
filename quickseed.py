@@ -3,6 +3,7 @@ import time
 import json
 import threading
 import schedule
+import requests
 from datetime import datetime, timedelta
 from monero.wallet import Wallet
 from monero.backends.jsonrpc import JSONRPCWallet
@@ -12,8 +13,25 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 
+
+def is_node_synchronized():
+    try:
+        response = requests.post('http://monerod:18081/json_rpc', json={
+            "jsonrpc": "2.0",
+            "id": "0",
+            "method": "get_info"
+        })
+        data = response.json()
+        if 'result' in data:
+            return data['result']['height'] == data['result']['target_height']
+    except Exception as e:
+        print(f"Error checking node synchronization: {e}")
+    return False
+
 class MoneroWalletManager:
     def __init__(self, master_wallet_address):
+        if not is_node_synchronized():
+            raise RuntimeError("Monero node is not synchronized with the blockchain.")
         self.master_wallet_address = master_wallet_address
         self.active_wallets = {}
         self.wallet_lock = threading.Lock()

@@ -8,6 +8,8 @@ RUN pip install --upgrade pip && \
 
 COPY . .
 
-EXPOSE 5000 28088 18081
+COPY wait_for_monerod.py .
 
-CMD ["python", "quickseed.py"]
+EXPOSE 5000 18081
+
+CMD ["sh", "-c", "python wait_for_monerod.py && python quickseed.py"]
