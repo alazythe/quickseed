@@ -10,7 +10,9 @@ def is_node_synchronized():
         })
         data = response.json()
         if 'result' in data:
-            return data['result']['height'] == data['result']['target_height']
+            result = data['result']
+            return (result['target_height'] == 0 or 
+                    result['height'] == result['target_height']) and not result.get('synchronized', False)
     except Exception as e:
         print(f"Error checking node synchronization: {e}")
     return False
@@ -18,7 +20,7 @@ def is_node_synchronized():
 def wait_for_sync():
     print("Waiting for Monero node to synchronize...")
     while not is_node_synchronized():
-        time.sleep(10)  # Wait for 10 seconds before checking again
+        time.sleep(10) 
     print("Monero node is synchronized.")
 
 if __name__ == "__main__":

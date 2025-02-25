@@ -1,13 +1,16 @@
 services:
   monerod:
     image: sethsimmons/simple-monerod:latest
-    command: ["--rpc-bind-ip", "0.0.0.0", "--rpc-bind-port", "18081", "--confirm-external-bind"]
-    ports:
-      - "18081:18081"
+    entrypoint: "/usr/local/bin/monerod"
+    command: [      
+      "--rpc-bind-ip", "0.0.0.0", 
+      "--rpc-bind-port", "18081", 
+      "--non-interactive", 
+      "--confirm-external-bind", 
+      ]
+    network_mode: "host"
     volumes:
       - monero_data:/root/.bitmonero
-    networks:
-      - quickseed_monero_net
 
   wallet_rpc:
     build:
@@ -22,7 +25,3 @@ services:
 
 volumes:
   monero_data: {}
-
-networks:
-  quickseed_monero_net:
-    driver: bridge
